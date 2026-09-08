@@ -16,6 +16,17 @@ e pegar a URL/chave). Cada arquivo é uma query separada — cole um de cada vez
 | `008_lock_after_confirmation.sql` | Trava tipo de banheiro/pai/cobrança depois da primeira confirmação |
 | `009_has_changing_table.sql` | Campo "tem trocador aqui?" pra marcar locais sem trocador de verdade |
 | `010_seed_florianopolis_100.sql` | 100 locais pesquisados em Florianópolis (não verificados) |
+| `011_seed_presidente_prudente_100.sql` | 100 locais em Presidente Prudente (não verificados) |
+| `012_seed_sao_paulo_100.sql` | 100 locais em São Paulo (não verificados) |
+| `013_seed_sorocaba_100.sql` | 100 locais em Sorocaba (não verificados) |
+| `014_seed_mar_del_plata_100.sql` | 100 locais em Mar del Plata (não verificados) |
+| `015_seed_mendoza_100.sql` | 100 locais em Mendoza (não verificados) |
+| `016_seed_cordoba_100.sql` | 100 locais em Córdoba (não verificados) |
+| `017_seed_rosario_100.sql` | 100 locais em Rosario (não verificados) |
+| `018_seed_porto_alegre_100.sql` | 100 locais em Porto Alegre (não verificados) |
+| `019_seed_curitiba_100.sql` | 100 locais em Curitiba (não verificados) |
+| `020_seed_rio_de_janeiro_100.sql` | 100 locais no Rio de Janeiro (não verificados) |
+| `021_seed_salvador_100.sql` | 100 locais em Salvador (não verificados) |
 
 Depois de rodar tudo, pegue a **Project URL** e a chave **anon public** em
 Project Settings → API, e cole no topo do `app.js`.

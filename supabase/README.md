@@ -42,6 +42,7 @@ e pegar a URL/chave). Cada arquivo é uma query separada — cole um de cada vez
 | `034_seed_blumenau_100.sql` | 100 locais em Blumenau (não verificados) |
 | `035_seed_itapema_100.sql` | 100 locais em Itapema (não verificados) |
 | `036_seed_campos_do_jordao_100.sql` | 100 locais em Campos do Jordão (não verificados) |
+| `037_segment_and_report_wrong.sql` | Campo "tipo de lugar" (segmento) na confirmação + reportar cadastro errado |
 
 Depois de rodar tudo, pegue a **Project URL** e a chave **anon public** em
 Project Settings → API, e cole no topo do `app.js`.

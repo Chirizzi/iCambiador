@@ -1,4 +1,4 @@
-const CACHE = 'achou-trocador-v15';
+const CACHE = 'achou-trocador-v16';
 const ASSETS = ['./', './index.html', './style.css', './app.js', './i18n.js', './manifest.json'];
 
 self.addEventListener('install', (e) => {

@@ -99,10 +99,13 @@ function rowToSpot(row){
     accessType: row.access_type,
     stillOpen: row.still_open,
     hasChangingTable: row.has_changing_table,
+    segment: row.segment,
     locationConfirmed: row.location_confirmed,
     dadAllowedConfirmed: row.dad_allowed_confirmed,
     accessTypeConfirmed: row.access_type_confirmed,
     hasChangingTableConfirmed: row.has_changing_table_confirmed,
+    segmentConfirmed: row.segment_confirmed,
+    reportedWrong: row.reported_wrong,
     lastConfirmedAt: row.last_confirmed_at ? new Date(row.last_confirmed_at).getTime() : null,
     verified: row.verified,
     createdAt: new Date(row.created_at).getTime(),
@@ -185,12 +188,18 @@ const LOCK_COLUMN = {
   dad_allowed: 'dad_allowed_confirmed',
   access_type: 'access_type_confirmed',
   has_changing_table: 'has_changing_table_confirmed',
+  segment: 'segment_confirmed',
 };
 const LOCK_FIELD_CAMEL = {
   location_confirmed: 'locationConfirmed',
   dad_allowed_confirmed: 'dadAllowedConfirmed',
   access_type_confirmed: 'accessTypeConfirmed',
   has_changing_table_confirmed: 'hasChangingTableConfirmed',
+  segment_confirmed: 'segmentConfirmed',
+};
+const FIELD_CAMEL = {
+  dad_allowed: 'dadAllowed', access_type: 'accessType', still_open: 'stillOpen',
+  location: 'location', has_changing_table: 'hasChangingTable', segment: 'segment',
 };
 
 async function confirmField(spotId, field, value){
@@ -205,14 +214,30 @@ async function confirmField(spotId, field, value){
   }
   const spot = spots.find(s => s.id === spotId);
   if(spot){
-    const camelField = { dad_allowed: 'dadAllowed', access_type: 'accessType', still_open: 'stillOpen', location: 'location', has_changing_table: 'hasChangingTable' }[field];
-    spot[camelField] = value;
+    spot[FIELD_CAMEL[field]] = value;
     spot.lastConfirmedAt = Date.now();
     spot.verified = true;
     if(lockColumn) spot[LOCK_FIELD_CAMEL[lockColumn]] = true;
     refreshSpotUI(spot);
   }
   showToast(t('toast.confirmThanks'));
+}
+
+// Sinalizador pequeno de "esse cadastro pode estar errado" — não é uma
+// confirmação normal (não deve contar como "informação validada"), então
+// não passa pelo confirmField nem mexe em last_confirmed_at/verified.
+async function reportWrong(spotId){
+  const spot = spots.find(s => s.id === spotId);
+  if(!spot || spot.reportedWrong) return;
+  const { error } = await sb.from('spots').update({ reported_wrong: true }).eq('id', spotId);
+  if(error){
+    console.error('Erro ao reportar local:', error);
+    showToast(t('toast.reportError'));
+    return;
+  }
+  spot.reportedWrong = true;
+  refreshSpotUI(spot);
+  showToast(t('toast.reportThanks'));
 }
 
 // Atualiza só o marcador/popup deste local, sem reconstruir o mapa inteiro
@@ -409,13 +434,17 @@ function pinIcon(className, glyph){
 
 const dropGlyph = `<svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="12" r="6"/></svg>`;
 const noTableGlyph = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>`;
+const flagPinGlyph = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18M5 4h11l-2 4 2 4H5"/></svg>`;
 const meGlyph = `<svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="12" r="7"/></svg>`;
 
 function spotPinClass(spot){
-  return spot.hasChangingTable === false ? 'no-table' : `loc-${spot.location}`;
+  if(spot.hasChangingTable === false || spot.reportedWrong) return 'no-table';
+  return `loc-${spot.location}`;
 }
 function spotPinGlyph(spot){
-  return spot.hasChangingTable === false ? noTableGlyph : dropGlyph;
+  if(spot.reportedWrong) return flagPinGlyph;
+  if(spot.hasChangingTable === false) return noTableGlyph;
+  return dropGlyph;
 }
 
 function renderAllMarkers(){
@@ -442,6 +471,9 @@ function openMarkerPopup(spotId){
 
 function heartSvg(filled){
   return `<svg width="18" height="18" viewBox="0 0 24 24" fill="${filled ? '#FF6B5C' : 'none'}" stroke="${filled ? '#FF6B5C' : '#CBD5E1'}" stroke-width="1.8"><path d="M12 21s-7.5-4.6-10-9.3C.5 8 2.6 4.5 6.2 4.2c2-.2 3.8.9 5.8 3 2-2.1 3.8-3.2 5.8-3 3.6.3 5.7 3.8 4.2 7.5C19.5 16.4 12 21 12 21z"/></svg>`;
+}
+function flagSvg(reported){
+  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${reported ? '#B91C1C' : '#CBD5E1'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18M5 4h11l-2 4 2 4H5"/></svg>`;
 }
 function starSvg(filled){
   return `<svg width="14" height="14" viewBox="0 0 24 24" fill="${filled ? '#FFC857' : 'none'}" stroke="${filled ? '#FFC857' : '#CBD5E1'}" stroke-width="1.5"><path d="M12 2l2.9 6.5L22 9.3l-5 5 1.2 7.2L12 18l-6.2 3.5L7 14.3l-5-5 7.1-.8L12 2z" stroke-linejoin="round"/></svg>`;
@@ -508,6 +540,12 @@ function confirmAccessTypeRow(spot){
   return confirmMultiRow(spot.id, 'access_type', t('confirm.paidLabel'), spot.accessType, options, spot.accessTypeConfirmed);
 }
 
+function confirmSegmentRow(spot){
+  const options = ['shopping', 'restaurante', 'supermercado', 'parque', 'praia', 'transporte', 'hospital', 'turistico', 'outro']
+    .map(opt => [opt, t(`segment.${opt}`)]);
+  return confirmMultiRow(spot.id, 'segment', t('confirm.segmentLabel'), spot.segment, options, spot.segmentConfirmed);
+}
+
 function confirmationsHtml(spot){
   const noTable = spot.hasChangingTable === false;
   const closedWarning = spot.stillOpen === false
@@ -516,19 +554,24 @@ function confirmationsHtml(spot){
   const noTableWarning = noTable
     ? `<div style="background:#FEE2E2;color:#B91C1C;font-size:11px;padding:5px 8px;border-radius:8px;margin-top:6px">${t('confirm.noTableWarning')}</div>`
     : '';
+  const reportedWarning = spot.reportedWrong
+    ? `<div style="background:#FEE2E2;color:#B91C1C;font-size:11px;padding:5px 8px;border-radius:8px;margin-top:6px">${t('report.warning')}</div>`
+    : '';
   const hasTableRow = confirmRow(spot.id, 'has_changing_table', t('confirm.hasTableLabel'), spot.hasChangingTable, t('common.yes'), t('common.no'), spot.hasChangingTableConfirmed);
 
   // se já confirmaram que não tem trocador, o resto (tipo de banheiro,
-  // pai, cobrança) não faz mais sentido de mostrar
+  // pai, cobrança, segmento) não faz mais sentido de mostrar
   const restOfForm = noTable ? '' : `
       ${confirmLocationRow(spot)}
       ${confirmRow(spot.id, 'still_open', t('confirm.stillOpenLabel'), spot.stillOpen, t('confirm.open'), t('confirm.closed'), false)}
       ${confirmRow(spot.id, 'dad_allowed', t('confirm.dadLabel'), spot.dadAllowed, t('common.yes'), t('common.no'), spot.dadAllowedConfirmed)}
-      ${confirmAccessTypeRow(spot)}`;
+      ${confirmAccessTypeRow(spot)}
+      ${confirmSegmentRow(spot)}`;
 
   return `
     ${closedWarning}
     ${noTableWarning}
+    ${reportedWarning}
     <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #E7E2D8">
       <div style="font-size:10px;color:#94A3B8;margin-bottom:2px">${t('confirm.title')} · ${formatRelativeTime(spot.lastConfirmedAt)}</div>
       ${hasTableRow}
@@ -575,7 +618,10 @@ function popupHtml(spot){
     <div style="font-family:Inter,sans-serif;min-width:200px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
         <strong style="font-family:Fraunces,serif;font-size:14.5px;display:flex;align-items:center;gap:5px">${escapeHtml(spot.name)}${verifiedBadge(spot)}</strong>
-        <span onclick="toggleFavorite('${spot.id}')" style="cursor:pointer;flex-shrink:0;margin-top:1px">${heartSvg(isFav)}</span>
+        <span style="display:flex;gap:8px;flex-shrink:0;margin-top:2px">
+          <span onclick="reportWrong('${spot.id}')" title="${t('report.ariaLabel')}" style="cursor:${spot.reportedWrong ? 'default' : 'pointer'}">${flagSvg(spot.reportedWrong)}</span>
+          <span onclick="toggleFavorite('${spot.id}')" style="cursor:pointer">${heartSvg(isFav)}</span>
+        </span>
       </div>
       <div style="font-size:12.5px;color:#64748B;margin-top:2px">${locationLabel(spot.location)}${dist ? ' · ' + dist : ''}</div>
       ${noTable ? '' : starsHtml(spot.id, ratingsSummary.get(spot.id))}
@@ -637,8 +683,8 @@ function renderList(){
     dist: ref ? distanceMeters(ref, s) : null,
   }));
   withDist.sort((a, b) => {
-    const aNoTable = a.hasChangingTable === false ? 1 : 0;
-    const bNoTable = b.hasChangingTable === false ? 1 : 0;
+    const aNoTable = (a.hasChangingTable === false || a.reportedWrong) ? 1 : 0;
+    const bNoTable = (b.hasChangingTable === false || b.reportedWrong) ? 1 : 0;
     if(aNoTable !== bNoTable) return aNoTable - bNoTable;
     const aFav = favorites.has(a.id) ? 0 : 1;
     const bFav = favorites.has(b.id) ? 0 : 1;
@@ -664,14 +710,16 @@ function renderList(){
     const rating = ratingsSummary.get(spot.id);
     const ratingLabel = rating?.count ? ` · ★ ${rating.avg.toFixed(1)}` : '';
     const noTable = spot.hasChangingTable === false;
+    const muted = noTable || spot.reportedWrong;
     const closedLabel = !noTable && spot.stillOpen === false ? ` · <span style="color:#B91C1C">${t('confirm.closed')}</span>` : '';
     const noTableLabel = noTable ? ` · <span style="color:#B91C1C">${t('list.noTable')}</span>` : '';
+    const reportedLabel = spot.reportedWrong ? ` · <span style="color:#B91C1C">${t('list.reported')}</span>` : '';
     return `
-    <div class="spot-card" data-id="${spot.id}" style="${noTable ? 'opacity:0.6' : ''}">
+    <div class="spot-card" data-id="${spot.id}" style="${muted ? 'opacity:0.6' : ''}">
       <div class="spot-badge ${spotPinClass(spot)}">${spotPinGlyph(spot)}</div>
       <div class="spot-info">
         <p class="spot-name" style="display:flex;align-items:flex-start;gap:4px"><span>${escapeHtml(spot.name)}</span>${verifiedBadge(spot)}</p>
-        <p class="spot-meta">${locationLabel(spot.location)}${ratingLabel}${closedLabel}${noTableLabel}</p>
+        <p class="spot-meta">${locationLabel(spot.location)}${ratingLabel}${closedLabel}${noTableLabel}${reportedLabel}</p>
         ${spot.notes ? `<p class="spot-notes">${escapeHtml(spot.notes)}</p>` : ''}
       </div>
       <button type="button" class="spot-fav" data-fav-toggle="${spot.id}" aria-label="${t('favorite.ariaLabel')}">${heartSvg(favorites.has(spot.id))}</button>
@@ -726,7 +774,7 @@ function onDragEnd(e){
 
 // ---------------- Botão farol: achar o mais perto AGORA ----------------
 document.getElementById('beacon-btn').addEventListener('click', () => {
-  const candidates = spots.filter(s => s.hasChangingTable !== false);
+  const candidates = spots.filter(s => s.hasChangingTable !== false && !s.reportedWrong);
   if(!candidates.length){
     showToast(t('toast.needSpotFirst'));
     return;

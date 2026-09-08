@@ -42,6 +42,8 @@ let userLatLng = null;
 let browsingLocation = null; // { lat, lng, label } — "ver perto de" um lugar buscado, não da localização real
 let map, userMarker;
 let markers = new Map();
+let markerCluster; // agrupa pinos próximos — sem isso, milhares de pinos
+                    // sobrepostos deixavam o mapa lento/travando ao dar zoom out
 let pendingLatLng = null; // ponto escolhido no formulário (novo local)
 let editingId = null;
 let ratingsSummary = new Map(); // spotId -> { avg, count }
@@ -108,16 +110,29 @@ function rowToSpot(row){
 }
 
 async function loadSpots(){
-  const { data, error } = await sb
-    .from('spots')
-    .select('*')
-    .order('created_at', { ascending: true });
-  if(error){
-    console.error('Erro ao carregar locais do Supabase:', error);
-    showToast(t('toast.loadError'));
-    return [...SEED_SPOTS];
+  // o Supabase só devolve até 1000 linhas por chamada — com milhares de
+  // locais cadastrados, precisa buscar em páginas até não sobrar mais nada.
+  const PAGE_SIZE = 1000;
+  let all = [];
+  let page = 0;
+  while(true){
+    const from = page * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data, error } = await sb
+      .from('spots')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .range(from, to);
+    if(error){
+      console.error('Erro ao carregar locais do Supabase:', error);
+      showToast(t('toast.loadError'));
+      return all.length ? all.map(rowToSpot) : [...SEED_SPOTS];
+    }
+    all = all.concat(data);
+    if(data.length < PAGE_SIZE) break;
+    page++;
   }
-  return data.map(rowToSpot);
+  return all.map(rowToSpot);
 }
 
 async function saveSpot(spot){
@@ -365,6 +380,20 @@ function initMap(){
   map.on('popupopen', () => appEl.classList.add('popup-open'));
   map.on('popupclose', () => appEl.classList.remove('popup-open'));
 
+  markerCluster = L.markerClusterGroup({
+    maxClusterRadius: 60,
+    spiderfyOnMaxZoom: true,
+    iconCreateFunction(cluster){
+      const count = cluster.getChildCount();
+      const size = count < 20 ? 34 : count < 100 ? 42 : 50;
+      return L.divIcon({
+        html: `<div class="cluster-pin" style="width:${size}px;height:${size}px">${count}</div>`,
+        className: '',
+        iconSize: [size, size],
+      });
+    },
+  }).addTo(map);
+
   renderAllMarkers();
   locateUser();
 }
@@ -390,14 +419,25 @@ function spotPinGlyph(spot){
 }
 
 function renderAllMarkers(){
-  markers.forEach(m => map.removeLayer(m));
+  markerCluster.clearLayers();
   markers.clear();
+  const newMarkers = [];
   spots.forEach(spot => {
     const icon = pinIcon(spotPinClass(spot), spotPinGlyph(spot));
-    const marker = L.marker([spot.lat, spot.lng], { icon }).addTo(map);
+    const marker = L.marker([spot.lat, spot.lng], { icon });
     marker.bindPopup(popupHtml(spot));
     markers.set(spot.id, marker);
+    newMarkers.push(marker);
   });
+  markerCluster.addLayers(newMarkers);
+}
+
+// Abre o popup de um local mesmo se o pino dele estiver escondido dentro
+// de um cluster agrupado no momento — dá zoom/espalha até ele aparecer.
+function openMarkerPopup(spotId){
+  const marker = markers.get(spotId);
+  if(!marker) return;
+  markerCluster.zoomToShowLayer(marker, () => marker.openPopup());
 }
 
 function heartSvg(filled){
@@ -652,7 +692,7 @@ sheetList.addEventListener('click', (e) => {
   const spot = spots.find(s => s.id === card.dataset.id);
   if(!spot) return;
   map.setView([spot.lat, spot.lng], 17);
-  markers.get(spot.id)?.openPopup();
+  openMarkerPopup(spot.id);
   closeSheet();
 });
 
@@ -701,7 +741,7 @@ document.getElementById('beacon-btn').addEventListener('click', () => {
     distanceMeters(ref, a) - distanceMeters(ref, b)
   )[0];
   map.setView([nearest.lat, nearest.lng], 17);
-  markers.get(nearest.id)?.openPopup();
+  openMarkerPopup(nearest.id);
   showToast(t('toast.nearest', { name: nearest.name, dist: formatDistance(distanceMeters(ref, nearest)) }));
   closeSheet();
 });

@@ -169,6 +169,22 @@ button{ font-family: inherit; }
   border-color: #fff;
 }
 
+/* Agrupamento de pinos (clusters) */
+.cluster-pin{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--navy-2);
+  color: #fff;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  border: 3px solid rgba(255,255,255,0.85);
+  box-shadow: var(--shadow-soft);
+}
+.marker-cluster{ background: transparent; }
+
 /* ---------- Botão farol (ação primária) ---------- */
 .beacon{
   position: absolute;

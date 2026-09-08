@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Achou Trocador</title>
+<meta name="description" content="Encontre trocadores de fralda perto de você.">
+<meta name="theme-color" content="#1B2A4A">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Achou Trocador">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="i18n.js"></script>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Barra superior -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C7.5 6 5 10.2 5 13.8C5 18.1 8.1 21 12 21C15.9 21 19 18.1 19 13.8C19 10.2 16.5 6 12 2Z" fill="currentColor"/>
+        </svg>
+      </span>
+      <span class="brand-name" data-i18n="app.title">Achou Trocador</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button id="btn-search-toggle" class="icon-btn" aria-label="Buscar lugar" data-i18n-aria-label="search.ariaLabel">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button id="btn-list-toggle" class="icon-btn" aria-label="Ver lista" data-i18n-aria-label="app.viewList">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Painel de busca de lugar (ver perto de um endereço, não de mim) -->
+  <div id="location-search-panel" class="location-search-panel">
+    <input type="text" id="location-search-input" placeholder="Buscar endereço ou lugar" data-i18n-placeholder="search.placeholder" autocomplete="off">
+    <div id="location-search-results" class="address-results"></div>
+  </div>
+
+  <!-- Chip: mostrando locais perto de um lugar buscado, não da localização real -->
+  <div id="browsing-chip" class="browsing-chip" hidden>
+    <span id="browsing-chip-label"></span>
+    <button type="button" id="browsing-chip-clear" aria-label="Limpar busca" data-i18n-aria-label="search.clearAriaLabel">✕</button>
+  </div>
+
+  <!-- Mapa -->
+  <main id="map"></main>
+
+  <!-- Botão-farol: ação primária de urgência -->
+  <button id="beacon-btn" class="beacon" aria-label="Preciso agora — achar o trocador mais perto" data-i18n-aria-label="beacon.ariaLabel">
+    <span class="beacon-pulse" aria-hidden="true"></span>
+    <span class="beacon-label">
+      <strong data-i18n="beacon.title">Preciso agora</strong>
+      <small data-i18n="beacon.subtitle">achar o mais perto</small>
+    </span>
+  </button>
+
+  <!-- Botão flutuante: adicionar local -->
+  <button id="add-btn" class="fab" aria-label="Adicionar trocador" data-i18n-aria-label="addButton.ariaLabel">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+
+  <!-- Toque fora da lista fecha ela -->
+  <div id="sheet-backdrop" class="sheet-backdrop"></div>
+
+  <!-- Painel inferior: lista de locais -->
+  <section id="sheet" class="sheet" aria-label="Locais próximos" data-i18n-aria-label="sheet.ariaLabel">
+    <div class="sheet-handle" id="sheet-handle"></div>
+    <div class="sheet-header">
+      <h2 id="sheet-title" data-i18n="sheet.nearYou">Perto de você</h2>
+      <span id="sheet-count" class="count-pill">0</span>
+    </div>
+    <div id="sheet-list" class="sheet-list">
+      <!-- itens injetados via JS -->
+    </div>
+  </section>
+
+  <!-- Formulário: adicionar/editar local -->
+  <section id="form-panel" class="form-panel" aria-hidden="true">
+    <div class="form-card">
+      <div class="form-header">
+        <h2 id="form-title" data-i18n="form.title">Novo trocador</h2>
+        <button id="form-close" class="icon-btn" aria-label="Fechar" data-i18n-aria-label="form.close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+        </button>
+      </div>
+
+      <label class="field">
+        <span data-i18n="form.addressLabel">Buscar endereço (opcional)</span>
+        <input type="text" id="f-address-search" placeholder="Ex: Av. Santa Fe 3253" data-i18n-placeholder="form.addressPlaceholder" autocomplete="off">
+        <div id="f-address-results" class="address-results"></div>
+        <p class="hint" style="margin:6px 0 0" data-i18n="form.addressHint">Escolha um resultado pra marcar o ponto no mapa automaticamente.</p>
+      </label>
+
+      <label class="field">
+        <span data-i18n="form.nameLabel">Nome do lugar</span>
+        <input type="text" id="f-name" placeholder="Ex: Shopping Alto Palermo, praça de alimentação" data-i18n-placeholder="form.namePlaceholder" maxlength="80">
+      </label>
+
+      <label class="field">
+        <span data-i18n="form.locationLabel">Onde fica o trocador</span>
+        <div class="chip-row" id="f-location-chips">
+          <button type="button" class="chip" data-value="feminino" data-i18n="location.feminino">Banheiro feminino</button>
+          <button type="button" class="chip" data-value="masculino" data-i18n="location.masculino">Banheiro masculino</button>
+          <button type="button" class="chip" data-value="familia" data-i18n="location.familia">Banheiro família / unissex</button>
+          <button type="button" class="chip" data-value="ambos" data-i18n="location.ambos">Feminino e masculino</button>
+        </div>
+      </label>
+
+      <label class="field">
+        <span data-i18n="form.dadLabel">Pai pode entrar no trocador? (opcional)</span>
+        <div class="chip-row" id="f-dad-chips">
+          <button type="button" class="chip" data-value="true" data-i18n="common.yes">Sim</button>
+          <button type="button" class="chip" data-value="false" data-i18n="common.no">Não</button>
+        </div>
+      </label>
+
+      <label class="field">
+        <span data-i18n="form.paidLabel">O local cobra entrada? (opcional)</span>
+        <div class="chip-row" id="f-paid-chips">
+          <button type="button" class="chip" data-value="free" data-i18n="common.free">Gratuito</button>
+          <button type="button" class="chip" data-value="paid" data-i18n="common.paid">Cobra</button>
+          <button type="button" class="chip" data-value="customers" data-i18n="common.customersOnly">Só clientes</button>
+        </div>
+      </label>
+
+      <label class="field">
+        <span data-i18n="form.notesLabel">Notas (opcional)</span>
+        <textarea id="f-notes" placeholder="Ex: fica no 2º andar, atrás do elevador. Precisa pedir a chave no balcão." data-i18n-placeholder="form.notesPlaceholder" maxlength="160" rows="2"></textarea>
+      </label>
+
+      <div class="field-row">
+        <button type="button" id="f-use-location" class="btn-ghost">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke-linecap="round"/></svg>
+          <span data-i18n="form.useLocation">Usar minha localização atual</span>
+        </button>
+      </div>
+
+      <p id="f-coords-hint" class="hint" data-i18n="form.hintDefault">Toque no mapa para marcar o ponto exato, ou use sua localização atual.</p>
+
+      <button id="f-save" class="btn-primary" disabled data-i18n="form.save">Salvar local</button>
+    </div>
+  </section>
+
+  <!-- Toast de feedback -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,515 @@
+/* ============================================
+   Achou Trocador — tokens
+   Conceito: farol noturno para pais em apuros.
+   Navy = confiança/orientação · Menta = limpeza/frescor
+   Coral = urgência (o botão que resolve o problema AGORA)
+   ============================================ */
+:root{
+  --navy: #16233F;
+  --navy-2: #1F3155;
+  --mint: #8FD4C1;
+  --mint-dim: #5FA890;
+  --coral: #FF6B5C;
+  --coral-dim: #E85445;
+  --cream: #FAF7F2;
+  --paper: #FFFFFF;
+  --slate: #64748B;
+  --slate-dim: #94A3B8;
+  --ink: #16233F;
+  --line: #E7E2D8;
+  --amber: #FFC857;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-l: 22px;
+  --radius-m: 14px;
+  --radius-s: 9px;
+
+  --shadow-soft: 0 8px 28px rgba(22,35,63,0.14);
+  --shadow-lift: 0 14px 40px rgba(22,35,63,0.22);
+}
+
+*{ box-sizing: border-box; }
+html, body{ height: 100%; margin: 0; overscroll-behavior: none; }
+body{
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--cream);
+  -webkit-font-smoothing: antialiased;
+}
+button{ font-family: inherit; }
+:focus-visible{ outline: 3px solid var(--amber); outline-offset: 2px; }
+
+#app{
+  position: relative;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ---------- Topbar ---------- */
+.topbar{
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 12px;
+  background: linear-gradient(180deg, rgba(22,35,63,0.85) 0%, rgba(22,35,63,0) 100%);
+  pointer-events: none;
+}
+.topbar > *{ pointer-events: auto; }
+.brand{ display: flex; align-items: center; gap: 8px; color: #fff; }
+.brand-mark{ color: var(--mint); display:flex; }
+.brand-name{
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: 0.2px;
+}
+.icon-btn{
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255,255,255,0.16);
+  color: #fff;
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.icon-btn:active{ background: rgba(255,255,255,0.28); }
+
+/* ---------- Busca de lugar (ver perto de um endereço, não de mim) ---------- */
+.location-search-panel{
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 62px);
+  left: 16px; right: 16px;
+  z-index: 550;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.location-search-panel.open{
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.location-search-panel input{
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-s);
+  padding: 11px 14px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: var(--shadow-soft);
+}
+.location-search-panel input:focus{ outline: none; border-color: var(--mint-dim); }
+.location-search-panel .address-results{ position: static; margin-top: 6px; }
+
+.browsing-chip{
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 62px);
+  left: 16px; right: 16px;
+  z-index: 460;
+  background: var(--navy);
+  color: #fff;
+  border-radius: 999px;
+  padding: 9px 8px 9px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  box-shadow: var(--shadow-soft);
+}
+.browsing-chip[hidden]{ display: none; }
+.browsing-chip span{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.browsing-chip button{
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  background: rgba(255,255,255,0.16);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ---------- Mapa ---------- */
+#map{
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #DDE7E3;
+}
+.leaflet-control-attribution{ font-size: 9px; }
+
+/* Marcadores customizados */
+.pin{
+  width: 34px; height: 34px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-soft);
+  border: 2.5px solid var(--paper);
+}
+.pin svg{ transform: rotate(45deg); }
+.pin.loc-feminino{ background: #E893A6; }
+.pin.loc-masculino{ background: #5B8FD6; }
+.pin.loc-familia{ background: var(--mint-dim); }
+.pin.loc-ambos{ background: var(--navy-2); }
+.pin.no-table{ background: #9CA3AF; opacity: 0.8; }
+.pin.pin-me{
+  background: var(--coral);
+  border-color: #fff;
+}
+
+/* ---------- Botão farol (ação primária) ---------- */
+.beacon{
+  position: absolute;
+  left: 16px; right: 16px;
+  bottom: 118px;
+  z-index: 450;
+  background: var(--coral);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow-lift);
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+/* Farol e botão + somem quando a lista ou um popup está aberto, pra não flutuar por cima */
+#app.sheet-open .beacon,
+#app.sheet-open .fab,
+#app.popup-open .beacon,
+#app.popup-open .fab{
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+.beacon:active{ transform: scale(0.97); }
+.beacon-pulse{
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  flex-shrink: 0;
+  position: relative;
+}
+.beacon-pulse::after{
+  content: "";
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  opacity: 0.7;
+  animation: pulse 1.8s ease-out infinite;
+}
+@keyframes pulse{
+  0%{ transform: scale(0.5); opacity: 0.8; }
+  100%{ transform: scale(1.8); opacity: 0; }
+}
+.beacon-label{ display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25; }
+.beacon-label strong{ font-family: var(--font-display); font-size: 16.5px; font-weight: 600; }
+.beacon-label small{ font-size: 12px; opacity: 0.88; font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce){
+  .beacon-pulse::after{ animation: none; }
+}
+
+/* ---------- Botão adicionar (FAB) ---------- */
+.fab{
+  position: absolute;
+  right: 16px;
+  bottom: 250px;
+  z-index: 450;
+  width: 50px; height: 50px;
+  border-radius: 16px;
+  border: none;
+  background: var(--navy);
+  color: var(--mint);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.2s ease;
+}
+.fab:active{ transform: scale(0.94); }
+
+/* ---------- Fundo que fecha a lista ao tocar fora ---------- */
+.sheet-backdrop{
+  position: absolute;
+  inset: 0;
+  z-index: 390;
+  display: none;
+}
+#app.sheet-open .sheet-backdrop{ display: block; }
+
+/* ---------- Sheet (lista inferior) ---------- */
+.sheet{
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  z-index: 400;
+  background: var(--paper);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -6px 24px rgba(22,35,63,0.12);
+  transform: translateY(calc(100% - 96px));
+  transition: transform 0.32s cubic-bezier(.32,.72,0,1);
+  max-height: 78dvh;
+  display: flex;
+  flex-direction: column;
+}
+.sheet.open{ transform: translateY(0); }
+.sheet-handle{
+  width: 40px; height: 4px;
+  background: var(--line);
+  border-radius: 3px;
+  margin: 10px auto 4px;
+  touch-action: none;
+}
+.sheet-header{
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 20px 12px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  touch-action: none;
+}
+.sheet-header h2{
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+}
+.count-pill{
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--cream);
+  color: var(--slate);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.sheet-list{
+  overflow-y: auto;
+  padding: 8px 12px 24px;
+  flex: 1;
+}
+
+.spot-card{
+  display: flex;
+  gap: 12px;
+  padding: 12px 10px;
+  border-radius: var(--radius-m);
+  cursor: pointer;
+}
+.spot-card:active{ background: var(--cream); }
+.spot-badge{
+  width: 40px; height: 40px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+}
+.spot-badge.loc-feminino{ background: #E893A6; }
+.spot-badge.loc-masculino{ background: #5B8FD6; }
+.spot-badge.loc-familia{ background: var(--mint-dim); }
+.spot-badge.loc-ambos{ background: var(--navy-2); }
+.spot-badge.no-table{ background: #9CA3AF; }
+.spot-info{ flex: 1; min-width: 0; }
+.spot-name{ font-weight: 600; font-size: 14.5px; margin: 0 0 2px; }
+.spot-meta{ font-size: 12.5px; color: var(--slate); margin: 0; }
+.spot-notes{ font-size: 12px; color: var(--slate-dim); margin: 3px 0 0; }
+.spot-dist{
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--slate);
+  align-self: center;
+  flex-shrink: 0;
+}
+.spot-fav{
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  align-self: center;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.empty-state{
+  text-align: center;
+  padding: 32px 20px 8px;
+  color: var(--slate);
+}
+.empty-state svg{ color: var(--slate-dim); margin-bottom: 10px; }
+.empty-state p{ font-size: 13.5px; margin: 0; line-height: 1.5; }
+
+/* ---------- Formulário (modal) ---------- */
+.form-panel{
+  position: absolute;
+  inset: 0;
+  z-index: 600;
+  background: rgba(22,35,63,0.4);
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.form-panel.open{ opacity: 1; pointer-events: auto; }
+.form-card{
+  width: 100%;
+  background: var(--paper);
+  border-radius: 24px 24px 0 0;
+  padding: 18px 20px calc(env(safe-area-inset-bottom, 0px) + 22px);
+  max-height: 88dvh;
+  overflow-y: auto;
+  transform: translateY(24px);
+  transition: transform 0.25s ease;
+}
+.form-panel.open .form-card{ transform: translateY(0); }
+.form-header{
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.form-header h2{
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  margin: 0;
+}
+.form-header .icon-btn{ background: var(--cream); color: var(--ink); }
+
+.field{ display: block; margin-bottom: 14px; position: relative; }
+
+.address-results{
+  position: absolute;
+  left: 0; right: 0;
+  top: 100%;
+  z-index: 50;
+  background: var(--paper);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-s);
+  margin-top: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-soft);
+}
+.address-results:empty{ display: none; border: none; }
+.address-result-item{
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.address-result-item:last-child{ border-bottom: none; }
+.address-result-item:active{ background: var(--cream); }
+.field > span{
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--slate);
+  margin-bottom: 6px;
+}
+.field input[type=text], .field textarea{
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-s);
+  padding: 11px 12px;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  color: var(--ink);
+  background: var(--cream);
+  resize: none;
+}
+.field input:focus, .field textarea:focus{
+  border-color: var(--mint-dim);
+  outline: none;
+}
+
+.chip-row{ display: flex; flex-wrap: wrap; gap: 8px; }
+.chip{
+  border: 1.5px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.chip.active{
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+.field-row{ margin: 4px 0 12px; }
+.btn-ghost{
+  display: inline-flex; align-items: center; gap: 7px;
+  background: none;
+  border: none;
+  color: var(--mint-dim);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.hint{
+  font-size: 12px;
+  color: var(--slate-dim);
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+.btn-primary{
+  width: 100%;
+  background: var(--coral);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-m);
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-primary:disabled{
+  background: var(--slate-dim);
+  cursor: not-allowed;
+}
+
+/* ---------- Toast ---------- */
+.toast{
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  transform: translate(-50%, 12px);
+  z-index: 900;
+  background: var(--navy);
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lift);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s ease;
+}
+.toast.show{ opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Responsivo desktop (pra testar em browser largo) ---------- */
+@media (min-width: 640px){
+  #app{ max-width: 430px; margin: 0 auto; box-shadow: 0 0 60px rgba(0,0,0,0.15); }
+}

@@ -27,6 +27,21 @@ e pegar a URL/chave). Cada arquivo é uma query separada — cole um de cada vez
 | `019_seed_curitiba_100.sql` | 100 locais em Curitiba (não verificados) |
 | `020_seed_rio_de_janeiro_100.sql` | 100 locais no Rio de Janeiro (não verificados) |
 | `021_seed_salvador_100.sql` | 100 locais em Salvador (não verificados) |
+| `022_seed_buenos_aires_200_extra.sql` | +200 locais em Buenos Aires (não verificados) |
+| `023_seed_sao_paulo_200_extra.sql` | +200 locais em São Paulo (não verificados) |
+| `024_seed_salta_100.sql` | 100 locais em Salta (não verificados) |
+| `025_seed_bariloche_100.sql` | 100 locais em Bariloche (não verificados) |
+| `026_seed_puerto_iguazu_100.sql` | 100 locais em Puerto Iguazú (não verificados) |
+| `027_seed_foz_do_iguacu_100.sql` | 100 locais em Foz do Iguaçu (não verificados) |
+| `028_seed_rio_gallegos_100.sql` | 100 locais em Río Gallegos (não verificados) |
+| `029_seed_ushuaia_100.sql` | 100 locais em Ushuaia (não verificados) |
+| `030_seed_comodoro_rivadavia_100.sql` | 100 locais em Comodoro Rivadavia (não verificados) |
+| `031_seed_gramado_100.sql` | 100 locais em Gramado (não verificados) |
+| `032_seed_santa_maria_100.sql` | 100 locais em Santa Maria/RS (não verificados) |
+| `033_seed_balneario_camboriu_100.sql` | 100 locais em Balneário Camboriú (não verificados) |
+| `034_seed_blumenau_100.sql` | 100 locais em Blumenau (não verificados) |
+| `035_seed_itapema_100.sql` | 100 locais em Itapema (não verificados) |
+| `036_seed_campos_do_jordao_100.sql` | 100 locais em Campos do Jordão (não verificados) |
 
 Depois de rodar tudo, pegue a **Project URL** e a chave **anon public** em
 Project Settings → API, e cole no topo do `app.js`.

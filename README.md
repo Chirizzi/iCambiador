@@ -34,10 +34,9 @@ que motivou o app.
 ## Configuração necessária (Supabase)
 Este app guarda os locais num projeto Supabase, não mais no celular.
 1. Crie um projeto grátis em [supabase.com](https://supabase.com)
-2. No **SQL Editor** do projeto, rode em ordem os scripts dos Passos 1
-   (tabela `spots` + RLS + tempo real), 2 (favoritos/avaliação/fotos) e 3
-   (confirmação de informações) — peça os scripts de volta ao Claude Code
-   se não tiver mais eles
+2. No **SQL Editor** do projeto, rode em ordem os scripts de
+   [`supabase/migrations`](supabase/) (veja o [README dessa pasta](supabase/README.md)
+   pra saber o que cada um faz)
 3. Em **Project Settings → API**, copie a **Project URL** e a chave **anon public**
 4. Cole os dois valores no topo de `app.js`, nas constantes `SUPABASE_URL` e
    `SUPABASE_ANON_KEY`
@@ -112,4 +111,5 @@ i18n.js          → traduções (pt/es/en) e detecção de idioma
 manifest.json    → configuração de instalação como PWA
 service-worker.js → cache básico offline
 icon-192.png / icon-512.png → ícones do app
+supabase/        → scripts SQL do banco, em ordem (veja supabase/README.md)
 ```

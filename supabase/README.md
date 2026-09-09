@@ -45,6 +45,7 @@ e pegar a URL/chave). Cada arquivo é uma query separada — cole um de cada vez
 | `037_segment_and_report_wrong.sql` | Campo "tipo de lugar" (segmento) na confirmação + reportar cadastro errado |
 | `038_seed_populous_latam_250.sql` | 250 locais espalhados pelas cidades mais populosas da América Latina (não verificados) |
 | `040_seed_touristic_100each_1.sql` a `045_...6.sql` | 100 locais em cada uma de 84 cidades turísticas da América Latina (não verificados) |
+| `046_seed_ar_150pop_75tour.sql` a `065_seed_it_150pop_75tour.sql` | 20 países (América Latina + Espanha/Portugal/Reino Unido/Alemanha/França/Itália): 150 locais nas cidades mais populosas (incluindo 15 restaurantes populares/famosos) + 75 nos destinos mais turísticos de cada país — 4.500 locais no total (não verificados) |
 
 Depois de rodar tudo, pegue a **Project URL** e a chave **anon public** em
 Project Settings → API, e cole no topo do `app.js`.
